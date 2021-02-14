@@ -9,8 +9,9 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## Setup
 I've had issues getting the here() function to work whenever I have a markdown file within an R project, and had my script in one folder and the data in another non-nested folder.  I can make it work if I nest the data folder within my scripts folder.  But I don't think that's a good organization strategy, because it may confuse somebody else trying to use my data.  Any thoughts on how to work this differently?  In these cases I keep going back to Jenny Bryan's Truman option of setwd().
-```{r packages and data, echo = FALSE}
+```{r packages and data, message = FALSE, warning = FALSE}
 library(here)
 library(ggplot2)
 library(dplyr)
@@ -21,6 +22,7 @@ trout <- read.csv('siscowet.csv')
 head(trout)
 ```
 
+## Exploratory
 As a fisherperson, I might be interested in seeing how fish weight varies by depth, so I know what depth to fish for the big trout.  I would also want to know whether the relationship between depth and weight varies by site, to know whether I can consistently fish the same depth across the Upper Peninsula shore of Lake Superior, or if I have to experiment every time I fish a new locale. So I graph depth as the independent variable, weight as dependent, and color the points by site.
 
 ```{r explore}
@@ -36,6 +38,7 @@ trout_exploratory
 
 My exploratory graph gave me a lot of good information about my question.  It looks like for the most part, depth isn't affecting weight with a very tight relationship. The outliers on the graph - the trophy fish I want to catch - are coming from intermediate depths.  But the sample size is pretty low for those really big fish, and the normal-big fish (~2000 g) are more evenly dispersed across the depth profile. Furthermore, all the big outliers are from two sites, and while it doesn't look like the biggest fish inhabit the deepest waters, all the deepest samples are from a site that doesn't contain any of the biggest fish.  The data scientist side of me suspects that I don't have enough data to decide on fishing any specific depth, and that nuances of site and sampling design may have affected the outcomes more than depth. 
 
+## Expository
 I want to present this information to my fishing buddies, because my data scientist side makes me more generous with information than many fisherpeople.  However, other than Mark my fishing companions haven't spent as much time with data analysis as I have, and they are even less familiar with the dataset than I am.  Furthermore, one of my friends is colorblind.  So I have a lot of cleaning up my figure to do before I show it to anybody.
 
 The ugly gray background default is the first problem that jumps out to me.  I've seen many people use theme_bw() to create a simpler visual gestalt, but I'm not a fan of the resulting gridlines, or the graph being bounded by a black box of axes borders.  I tend to make my own theme that creates as much white spaces as possible. On the visual side of things, the colors of the points are another issue.  They probably aren't colorblind safe and I don't like the pastel.  I'd also like to add trendlines to make the lack-of-relationship a bit more clear.
@@ -83,9 +86,11 @@ trout_expository <- trout %>%
 trout_expository
 ```
 
-This graph gives me a much more readable, useful image to work with.  The trendlines have the bonus of showing more clearly which sites have bigger fish, which could be useful for limited instances of fishing those specific sites, or of thinking about what attributes of those sites may causes differences in fish weight.  However, it's hard to make a really clean graph with the points included, because of the wide spread of the points and the interspersion of different colors.  I could have made smaller points which may have helped, but then their color is hard to read.  Faceting by site could be a good option here, although I prefer to keep the points together in one graph if possible because it allows for more direct comparison.  I didn't really feel I had enough points for a heatmap, and that would likely require faceting.
+This graph gives me a much more readable, useful image to work with.  The trendlines have the bonus of showing more clearly which sites have bigger fish, which could be useful for limited instances of fishing those specific sites, or of thinking about what attributes of those sites may causes differences in fish weight.  However, it's hard to make a really clean graph with the points included, because of the wide spread of the points and the interspersion of different colors.  I could have made smaller points which may have helped, but then their color is hard to read.  As it is, I made a bit of a tradeoff with interpretability of color by making the transparency pretty high to keep the points from drowning out the lies.  Faceting by site could be a good option here, although I prefer to keep the points together in one graph if possible because it allows for more direct comparison.  I didn't really feel I had enough points for a heatmap, and that would likely require faceting.
 
-I think if I were making this for a publication instead of for my fishing buddies, I would probably take the site differences out and pool all the data to investigate the relationship.  We're more likley interested in general patterns than site specificity in that case, and including all the sites inevitably leads to either a harder to read graph, or removal of information (we could also take out the individual points). So here's my graph for a journal (but keeping the English units):
+## Publication
+
+I think if I were making this for a publication instead of for my fishing buddies, I would probably take the site differences out and pool all the data to investigate the relationship.  We're more likely interested in general patterns than site specificity in that case, and including all the sites inevitably leads to either a harder to read graph, or removal of information (we could also take out the individual points). So here's my graph for a journal (but keeping the English units):
 
 ```{r publication graph}
 trout_pub <- trout %>%
@@ -109,4 +114,6 @@ trout_pub <- trout %>%
 trout_pub
 ```
 
-Note that we've lost an important piece of information by going to this easier to read graph: that all the deepest samples come from one site with generally low weight.  This is an interesting example of how sample nuance can affect results; it may make the apparent relationship between depth and weight stronger than the real one, because the one site likely has a lot of leverage over the whole trendline.  We'd have to be clear about this in our results and discussion sections. 
+Note that we've lost an important piece of information by going to this easier to read graph: that all the deepest samples come from one site with generally low weight.  This is an interesting example of how sample nuance can affect results; it may make the apparent relationship between depth and weight stronger than the real one, because the one site likely has a lot of leverage over the whole trendline.  We'd have to be clear about this in our results and discussion sections. I also could consider nonlinear trendlines, because the highest values for weight were from the middle of the depth profile.
+
+This graph had the advantages, however, of telling the main story clearly without the additional complexity of site.  This also allowed me to use much smaller points and lines, because I didn't need the reader to be able to distinguish color. This keeps the information from blurring together as much as it does in the former graph.
