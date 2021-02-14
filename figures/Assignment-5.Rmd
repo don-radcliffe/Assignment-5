@@ -1,0 +1,25 @@
+---
+title: "Assignment-5"
+author: "Don Radcliffe"
+date: "2/14/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages and data, echo = FALSE}
+library(here)
+library(ggplot2)
+library(dplyr)
+
+here('data')
+
+trout <- read.csv('siscowet.csv')
+head(trout)
+```
+
+```{r explore}
+
+```
