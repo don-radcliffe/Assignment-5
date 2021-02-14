@@ -21,16 +21,92 @@ trout <- read.csv('siscowet.csv')
 head(trout)
 ```
 
-As a fisherperson, I might be interested in seeing how fish weight varies by depth, so I know what depth to fish for the big trout.  I would also want to know whether the relationship between depth and weight varies by site, to know whether I can consistently fish the same depth across the Upper Peninsula shore of Lake Superior, or if I have to experiment every time I fish a new locale. 
+As a fisherperson, I might be interested in seeing how fish weight varies by depth, so I know what depth to fish for the big trout.  I would also want to know whether the relationship between depth and weight varies by site, to know whether I can consistently fish the same depth across the Upper Peninsula shore of Lake Superior, or if I have to experiment every time I fish a new locale. So I graph depth as the independent variable, weight as dependent, and color the points by site.
 
-I can see from the following graph that the depth I fish probably wouldn't affect the weight of  
 ```{r explore}
 trout_exploratory <- trout %>%
   ## removing one crazy outlier
   filter(wgt < 5000) %>%
   ggplot(aes(x = pnldep, y = wgt, color = locID)) +
   ## jittered the points because there were a lot of linear patterns
-  geom_jitter(alpha = 0.5) +
-  theme_bw()
+  ## and made somewhat transparent
+  geom_jitter(alpha = 0.5)
 trout_exploratory
 ```
+
+My exploratory graph gave me a lot of good information about my question.  It looks like for the most part, depth isn't affecting weight with a very tight relationship. The outliers on the graph - the trophy fish I want to catch - are coming from intermediate depths.  But the sample size is pretty low for those really big fish, and the normal-big fish (~2000 g) are more evenly dispersed across the depth profile. Furthermore, all the big outliers are from two sites, and while it doesn't look like the biggest fish inhabit the deepest waters, all the deepest samples are from a site that doesn't contain any of the biggest fish.  The data scientist side of me suspects that I don't have enough data to decide on fishing any specific depth, and that nuances of site and sampling design may have affected the outcomes more than depth. 
+
+I want to present this information to my fishing buddies, because my data scientist side makes me more generous with information than many fisherpeople.  However, other than Mark my fishing companions haven't spent as much time with data analysis as I have, and they are even less familiar with the dataset than I am.  Furthermore, one of my friends is colorblind.  So I have a lot of cleaning up my figure to do before I show it to anybody.
+
+The ugly gray background default is the first problem that jumps out to me.  I've seen many people use theme_bw() to create a simpler visual gestalt, but I'm not a fan of the resulting gridlines, or the graph being bounded by a black box of axes borders.  I tend to make my own theme that creates as much white spaces as possible. On the visual side of things, the colors of the points are another issue.  They probably aren't colorblind safe and I don't like the pastel.  I'd also like to add trendlines to make the lack-of-relationship a bit more clear.
+
+Another, perhaps more serious issue is lack of clarity in labels and presentation.  What in the world is pnldep?  The axes labels need to be changed.  I'm not somebody who subscribes to the 'no legend' school of graphing, but I do think the title of the legend is often unnecessary, and believe so in this case.  I like to move the legend into the graph boundaries when there is an area with no points. Also, because I'm presenting this to fishing buddies back home in Wisconsin, I'm going to need to convert to standard from metric.  Finally, a decriptive title would be helpful.
+
+
+```{r expository graph}
+## I often make my own theme and then apply it to all my graphs
+simpletheme <- theme(panel.grid.major = element_blank(), 
+                     panel.grid.minor = element_blank(),
+                     panel.background = element_blank()) +
+  theme(axis.line = element_blank()) +
+  theme(axis.ticks = element_blank()) +
+  theme(plot.title = element_text(hjust = 0.1)) +
+  theme(legend.title = element_blank()) +
+  theme(legend.key=element_blank()) 
+
+## Colors chosen from colorbrewer advice weren't great for points
+## because they used light and dark hues, and I find darker hues better for points
+## especially because I cranked up the alpha here
+## so I chose my own colors and vetted them 
+colors <- c('green4', 'gray5', 'tan4', 'blue3')
+
+trout_expository <- trout %>%
+  ## removing one crazy outlier
+  filter(wgt < 5000) %>%
+  ## changed depth from meters to feet
+  ## changed weight from grams to pounds
+  ggplot(aes(x = pnldep*3.28, y = wgt*0.00220462, color = locID)) +
+  ## jittered the points because there were a lot of linear patterns
+  geom_jitter(alpha = 0.3, size = 3) +
+  ## added trendline
+  ## normally wouldn't remove confidence interval 
+  ## but it's confusing to have that with all the points
+  geom_smooth(method = 'lm', size = 1.5, se = FALSE) +
+  xlab('depth (feet)') +
+  ylab('weight (pounds)') +
+  ggtitle('fish size not predicted by depth') +
+  theme(legend.position = c(0.85, 0.85)) +
+  ## make y axis show round numbers
+  scale_y_continuous(breaks = c(0,4,8)) +
+  scale_color_manual(values = colors) +
+  simpletheme
+trout_expository
+```
+
+This graph gives me a much more readable, useful image to work with.  The trendlines have the bonus of showing more clearly which sites have bigger fish, which could be useful for limited instances of fishing those specific sites, or of thinking about what attributes of those sites may causes differences in fish weight.  However, it's hard to make a really clean graph with the points included, because of the wide spread of the points and the interspersion of different colors.  I could have made smaller points which may have helped, but then their color is hard to read.  Faceting by site could be a good option here, although I prefer to keep the points together in one graph if possible because it allows for more direct comparison.  I didn't really feel I had enough points for a heatmap, and that would likely require faceting.
+
+I think if I were making this for a publication instead of for my fishing buddies, I would probably take the site differences out and pool all the data to investigate the relationship.  We're more likley interested in general patterns than site specificity in that case, and including all the sites inevitably leads to either a harder to read graph, or removal of information (we could also take out the individual points). So here's my graph for a journal (but keeping the English units):
+
+```{r publication graph}
+trout_pub <- trout %>%
+  ## removing one crazy outlier
+  filter(wgt < 5000) %>%
+  ## changed depth from meters to feet
+  ## changed weight from grams to pounds
+  ggplot(aes(x = pnldep*3.28, y = wgt*0.00220462)) +
+  ## jittered the points because there were a lot of linear patterns
+  geom_jitter(alpha = 0.3, size = 1) +
+  ## added trendline
+  ## keeping the confidence interval now because science
+  geom_smooth(method = 'lm', size = 1.2, se = TRUE, color = 'blue3') +
+  xlab('depth (feet)') +
+  ylab('weight (pounds)') +
+  ggtitle('fish size not predicted by depth') +
+  theme(legend.position = c(0.85, 0.85)) +
+  ## make y axis show round numbers
+  scale_y_continuous(breaks = c(0,4,8)) +
+  simpletheme
+trout_pub
+```
+
+Note that we've lost an important piece of information by going to this easier to read graph: that all the deepest samples come from one site with generally low weight.  This is an interesting example of how sample nuance can affect results; it may make the apparent relationship between depth and weight stronger than the real one, because the one site likely has a lot of leverage over the whole trendline.  We'd have to be clear about this in our results and discussion sections. 
