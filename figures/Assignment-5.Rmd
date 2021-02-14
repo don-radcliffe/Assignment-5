@@ -9,17 +9,28 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+I've had issues getting the here() function to work whenever I have a markdown file within an R project, and had my script in one folder and the data in another non-nested folder.  I can make it work if I nest the data folder within my scripts folder.  But I don't think that's a good organization strategy, because it may confuse somebody else trying to use my data.  Any thoughts on how to work this differently?  In these cases I keep going back to Jenny Bryan's Truman option of setwd().
 ```{r packages and data, echo = FALSE}
 library(here)
 library(ggplot2)
 library(dplyr)
 
-here('data')
-
+#here('Assignment-5/data')
+setwd('C:/ProgramR/fish497/homework5/Assignment-5/data')
 trout <- read.csv('siscowet.csv')
 head(trout)
 ```
 
-```{r explore}
+As a fisherperson, I might be interested in seeing how fish weight varies by depth, so I know what depth to fish for the big trout.  I would also want to know whether the relationship between depth and weight varies by site, to know whether I can consistently fish the same depth across the Upper Peninsula shore of Lake Superior, or if I have to experiment every time I fish a new locale. 
 
+I can see from the following graph that the depth I fish probably wouldn't affect the weight of  
+```{r explore}
+trout_exploratory <- trout %>%
+  ## removing one crazy outlier
+  filter(wgt < 5000) %>%
+  ggplot(aes(x = pnldep, y = wgt, color = locID)) +
+  ## jittered the points because there were a lot of linear patterns
+  geom_jitter(alpha = 0.5) +
+  theme_bw()
+trout_exploratory
 ```
